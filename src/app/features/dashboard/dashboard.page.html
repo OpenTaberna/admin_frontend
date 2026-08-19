@@ -1,0 +1,131 @@
+<ot-page-header
+  [title]="'Good to see you, ' + (auth.user()?.displayName || 'admin')"
+  description="What needs attention in the store right now."
+/>
+
+@if (loading()) {
+  <ot-spinner label="Gathering the shop's state…" />
+} @else {
+  @if (partial()) {
+    <div class="mb-4">
+      <ot-badge tone="warn">Some panels could not load</ot-badge>
+    </div>
+  }
+
+  <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <a
+      routerLink="/products"
+      class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
+    >
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Visible to customers</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">{{ activeCount }}</p>
+      <p class="mt-1 text-xs text-ink-muted">{{ hiddenCount }} hidden or archived</p>
+    </a>
+
+    <a
+      routerLink="/inventory"
+      class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
+    >
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Out of stock</p>
+      <p
+        class="mt-1 text-3xl font-semibold tabular-nums"
+        [class.text-danger]="outOfStock.length > 0"
+      >
+        {{ outOfStock.length }}
+      </p>
+      <p class="mt-1 text-xs text-ink-muted">Customers cannot buy these</p>
+    </a>
+
+    <a
+      routerLink="/inventory"
+      class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
+    >
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Low stock</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums" [class.text-warn]="lowStock.length > 0">
+        {{ lowStock.length }}
+      </p>
+      <p class="mt-1 text-xs text-ink-muted">Five or fewer available</p>
+    </a>
+
+    <a
+      routerLink="/orders"
+      class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
+    >
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Paid, awaiting fulfilment</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">{{ openOrders().length }}</p>
+      <p class="mt-1 text-xs text-ink-muted">Ready to pick and pack</p>
+    </a>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <ot-card
+      title="Needs restocking"
+      description="Nothing can be sold while available stock is zero."
+      [padded]="false"
+    >
+      @if (outOfStock.length === 0 && lowStock.length === 0) {
+        <p class="px-5 py-8 text-center text-sm text-ink-muted">
+          Every tracked SKU has stock available.
+        </p>
+      } @else {
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Status</th>
+                <th class="text-right">Available</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of outOfStock.concat(lowStock); track row.id) {
+                <tr>
+                  <td>
+                    <code class="text-xs text-ink-muted">{{ row.sku }}</code>
+                  </td>
+                  <td>
+                    <ot-badge [tone]="row.on_hand - row.reserved <= 0 ? 'danger' : 'warn'">
+                      {{ row.on_hand - row.reserved <= 0 ? 'out of stock' : 'low' }}
+                    </ot-badge>
+                  </td>
+                  <td class="text-right tabular-nums">{{ row.on_hand - row.reserved }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </ot-card>
+
+    <ot-card
+      title="Waiting to ship"
+      description="Paid orders that have not been handed to a carrier."
+      [padded]="false"
+    >
+      @if (openOrders().length === 0) {
+        <p class="px-5 py-8 text-center text-sm text-ink-muted">Nothing is waiting.</p>
+      } @else {
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Placed</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (order of openOrders().slice(0, 8); track order.id) {
+                <tr>
+                  <td>
+                    <code class="text-xs text-ink-muted">{{ order.id.slice(0, 8) }}</code>
+                  </td>
+                  <td class="text-ink-muted">{{ order.created_at | date: 'short' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </ot-card>
+  </div>
+}

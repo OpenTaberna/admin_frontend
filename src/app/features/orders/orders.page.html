@@ -1,0 +1,211 @@
+<ot-page-header
+  title="Orders"
+  description="Everything customers have bought. Open an order to see its lines, payment and shipment."
+>
+  <ot-button variant="secondary" size="sm" (click)="load()">Refresh</ot-button>
+</ot-page-header>
+
+@if (error(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="danger">{{ message }}</ot-alert>
+  </div>
+}
+
+<div class="card mb-6 p-4">
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="w-56">
+      <label class="field-label" for="status-filter">Filter by status</label>
+      <select
+        id="status-filter"
+        class="field-control"
+        [(ngModel)]="filter"
+        (ngModelChange)="load()"
+      >
+        <option value="">All statuses</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ readable(s) }}</option>
+        }
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <ot-spinner label="Loading orders…" />
+  } @else if (rows().length === 0) {
+    <ot-empty-state title="No orders" description="Nothing matches this filter yet." />
+  } @else {
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Status</th>
+            <th>Placed</th>
+            <th class="text-right">Total</th>
+            <th class="w-px"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of rows(); track order.id) {
+            <tr>
+              <td>
+                <code class="text-xs text-ink-muted">{{ order.id.slice(0, 8) }}</code>
+              </td>
+              <td>
+                <ot-badge [tone]="tone(order.status)">{{ readable(order.status) }}</ot-badge>
+              </td>
+              <td class="text-ink-muted">{{ order.created_at | date: 'medium' }}</td>
+              <td class="text-right tabular-nums">
+                {{ order.total_amount | money: order.currency }}
+              </td>
+              <td>
+                <div class="flex justify-end gap-1">
+                  <ot-button variant="ghost" size="sm" (click)="open(order)">View</ot-button>
+                  <ot-button
+                    variant="ghost"
+                    size="sm"
+                    (click)="startOverride(order.id, order.status)"
+                    >Status</ot-button
+                  >
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<ot-modal [open]="detailOpen()" title="Order detail" (closed)="detailOpen.set(false)">
+  @if (detailLoading()) {
+    <ot-spinner />
+  } @else if (detail(); as d) {
+    <div class="space-y-5">
+      <div class="flex items-center gap-2">
+        <ot-badge [tone]="tone(d.order.status)">{{ readable(d.order.status) }}</ot-badge>
+        <code class="text-xs text-ink-muted">{{ d.order.id }}</code>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p class="field-label">Customer</p>
+          @if (d.customer) {
+            <p class="text-sm text-ink">{{ d.customer.first_name }} {{ d.customer.last_name }}</p>
+            <p class="text-xs text-ink-muted">{{ d.customer.email }}</p>
+            @if (d.customer.phone) {
+              <p class="text-xs text-ink-muted">{{ d.customer.phone }}</p>
+            }
+          } @else {
+            <p class="text-sm text-ink-subtle">—</p>
+          }
+        </div>
+        <div>
+          <p class="field-label">Ship to</p>
+          @if (d.shipping_address; as a) {
+            <p class="text-sm text-ink">{{ a.street }}</p>
+            <p class="text-xs text-ink-muted">{{ a.zip_code }} {{ a.city }}, {{ a.country }}</p>
+          } @else {
+            <p class="text-sm text-ink-subtle">No default address</p>
+          }
+        </div>
+      </div>
+
+      <div>
+        <p class="field-label">Lines</p>
+        <div class="table-scroll rounded-[var(--radius-control)] border border-line">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of d.items; track line.id) {
+                <tr>
+                  <td>
+                    <code class="text-xs">{{ line.sku }}</code>
+                  </td>
+                  <td class="text-right tabular-nums">{{ line.quantity }}</td>
+                  <td class="text-right tabular-nums">
+                    {{ line.unit_price | money: d.order.currency }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p class="field-label">Payment</p>
+          <p class="text-sm text-ink">{{ d.payment?.status || '—' }}</p>
+        </div>
+        <div>
+          <p class="field-label">Shipment</p>
+          @if (d.shipment; as s) {
+            <p class="text-sm text-ink">{{ s.carrier }} — {{ s.status }}</p>
+            <p class="text-xs text-ink-muted">{{ s.tracking_number || 'No tracking number' }}</p>
+          } @else {
+            <p class="text-sm text-ink-subtle">Not shipped</p>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <ng-container modalActions>
+    @if (detail(); as d) {
+      <a
+        [href]="packingSlip(d.order.id)"
+        target="_blank"
+        rel="noopener"
+        class="inline-flex items-center rounded-[var(--radius-control)] border border-line-strong px-3.5 py-2 text-sm text-ink hover:bg-surface-muted"
+        >Packing slip</a
+      >
+    }
+    <ot-button variant="secondary" size="sm" (click)="detailOpen.set(false)">Close</ot-button>
+  </ng-container>
+</ot-modal>
+
+<ot-modal [open]="overrideOpen()" title="Override order status" (closed)="overrideOpen.set(false)">
+  <div class="space-y-4">
+    <ot-alert tone="warn">
+      A manual override skips the normal transition rules. The reason is written to the audit log.
+    </ot-alert>
+    <div>
+      <label class="field-label" for="override-status">New status</label>
+      <select id="override-status" class="field-control" [(ngModel)]="overrideStatus">
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ readable(s) }}</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label class="field-label" for="override-reason">Reason</label>
+      <textarea
+        id="override-reason"
+        rows="3"
+        class="field-control"
+        [(ngModel)]="overrideReason"
+        placeholder="Why is this order being moved by hand?"
+      ></textarea>
+    </div>
+  </div>
+
+  <ng-container modalActions>
+    <ot-button variant="secondary" size="sm" (click)="overrideOpen.set(false)">Cancel</ot-button>
+    <ot-button
+      size="sm"
+      [loading]="saving()"
+      [disabled]="!overrideReason.trim()"
+      (click)="submitOverride()"
+      >Apply override</ot-button
+    >
+  </ng-container>
+</ot-modal>

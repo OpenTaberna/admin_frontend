@@ -1,0 +1,87 @@
+<ot-page-header
+  title="Returns"
+  description="Review return requests customers have filed against shipped orders."
+/>
+
+@if (error(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="danger">{{ message }}</ot-alert>
+  </div>
+}
+@if (notice(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="ok">{{ message }}</ot-alert>
+  </div>
+}
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="lg:col-span-2">
+    <ot-card
+      title="Process a return"
+      description="Enter the return id from the customer's request, then choose a transition."
+    >
+      <div class="space-y-4">
+        <div>
+          <label class="field-label" for="return-id">Return id</label>
+          <input
+            id="return-id"
+            class="field-control"
+            [(ngModel)]="returnId"
+            placeholder="e.g. 8f14e45f-ceea-467a-9f0a-1c2b3d4e5f60"
+          />
+        </div>
+        <div>
+          <label class="field-label" for="admin-note">Note (optional)</label>
+          <textarea
+            id="admin-note"
+            rows="3"
+            class="field-control"
+            [(ngModel)]="adminNote"
+            placeholder="Recorded against the return for the next person who looks at it."
+          ></textarea>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          @for (t of transitions; track t.status) {
+            <ot-button
+              size="sm"
+              [variant]="t.status === 'rejected' ? 'danger' : 'primary'"
+              (click)="start(t.status)"
+              >{{ t.label }}</ot-button
+            >
+          }
+        </div>
+      </div>
+    </ot-card>
+  </div>
+
+  <ot-card title="How returns move">
+    <ol class="space-y-3 text-sm text-ink-muted">
+      <li>
+        <span class="font-medium text-ink">Requested</span> — filed by the customer against a
+        shipped order.
+      </li>
+      <li>
+        <span class="font-medium text-ink">Approved</span> or
+        <span class="font-medium text-ink">Rejected</span> — your decision.
+      </li>
+      <li>
+        <span class="font-medium text-ink">Completed</span> — the goods are back. Only an approved
+        return can reach this.
+      </li>
+    </ol>
+    <p class="mt-4 text-xs text-ink-subtle">
+      Rejected and completed are final. The API refuses any move out of them.
+    </p>
+  </ot-card>
+</div>
+
+<ot-modal [open]="confirmOpen()" title="Confirm" (closed)="confirmOpen.set(false)">
+  <p class="text-sm text-ink">
+    {{ pendingLabel() }} return <code class="text-xs">{{ returnId }}</code
+    >?
+  </p>
+  <ng-container modalActions>
+    <ot-button variant="secondary" size="sm" (click)="confirmOpen.set(false)">Cancel</ot-button>
+    <ot-button size="sm" [loading]="saving()" (click)="submit()">Confirm</ot-button>
+  </ng-container>
+</ot-modal>
