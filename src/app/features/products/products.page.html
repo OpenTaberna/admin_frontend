@@ -22,21 +22,55 @@
     >
       <ot-button size="sm" (click)="openCreate()">New product</ot-button>
     </ot-empty-state>
+  } @else if (visible().length === 0) {
+    <ot-empty-state
+      title="No products match"
+      description="Try removing a filter or clearing the search."
+    />
   } @else {
     <div class="table-scroll">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Product</th>
-            <th>SKU</th>
-            <th>Status</th>
-            <th class="text-right">Price</th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'name'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('name')"
+            >
+              Product
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'sku'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('sku')"
+            >
+              SKU
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'status'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('status')"
+            >
+              Status
+            </th>
+            <th
+              class="text-right"
+              ot-sort-header
+              [active]="sort.state().key === 'price'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('price')"
+            >
+              Price
+            </th>
             <th class="w-px"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (item of items(); track item.uuid) {
-            <tr>
+          @for (item of visible(); track item.uuid) {
+            <tr otRowLink (activated)="openEdit(item)">
               <td>
                 <p class="font-medium text-ink">{{ item.name }}</p>
                 <p class="text-xs text-ink-subtle">{{ item.brand || '—' }}</p>

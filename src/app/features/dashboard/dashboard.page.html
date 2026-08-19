@@ -1,25 +1,72 @@
 <ot-page-header
-  [title]="'Good to see you, ' + (auth.user()?.displayName || 'admin')"
-  description="What needs attention in the store right now."
+  title="Overview"
+  description="Money, fulfilment and stock across the most recent 100 orders."
 />
 
 @if (loading()) {
   <ot-spinner label="Gathering the shop's state…" />
 } @else {
   @if (partial()) {
-    <div class="mb-4">
-      <ot-badge tone="warn">Some panels could not load</ot-badge>
-    </div>
+    <div class="mb-4"><ot-badge tone="warn">Some panels could not load</ot-badge></div>
   }
 
+  <!-- Money -->
+  <div class="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card p-5">
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Revenue</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">
+        {{ revenue() | money: currency() }}
+      </p>
+      <p class="mt-1 text-xs text-ink-muted">Paid, packed and shipped</p>
+    </div>
+
+    <a
+      routerLink="/orders"
+      class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
+    >
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Awaiting payment</p>
+      <p
+        class="mt-1 text-3xl font-semibold tabular-nums"
+        [class.text-warn]="awaitingPayment().length > 0"
+      >
+        {{ awaitingPaymentValue() | money: currency() }}
+      </p>
+      <p class="mt-1 text-xs text-ink-muted">
+        {{ awaitingPayment().length }} checkout(s) not yet settled
+      </p>
+    </a>
+
+    <a
+      routerLink="/orders"
+      class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
+    >
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Outstanding shipments</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">
+        {{ awaitingShipment().length }}
+      </p>
+      <p class="mt-1 text-xs text-ink-muted">
+        {{ awaitingShipmentValue() | money: currency() }} waiting to go out
+      </p>
+    </a>
+
+    <div class="card p-5">
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Average order</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">
+        {{ averageOrder() | money: currency() }}
+      </p>
+      <p class="mt-1 text-xs text-ink-muted">{{ shipped().length }} shipped to date</p>
+    </div>
+  </div>
+
+  <!-- Catalogue and stock -->
   <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
     <a
       routerLink="/products"
       class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
     >
       <p class="text-xs uppercase tracking-wide text-ink-subtle">Visible to customers</p>
-      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">{{ activeCount }}</p>
-      <p class="mt-1 text-xs text-ink-muted">{{ hiddenCount }} hidden or archived</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">{{ activeCount() }}</p>
+      <p class="mt-1 text-xs text-ink-muted">{{ hiddenCount() }} draft or archived</p>
     </a>
 
     <a
@@ -29,9 +76,9 @@
       <p class="text-xs uppercase tracking-wide text-ink-subtle">Out of stock</p>
       <p
         class="mt-1 text-3xl font-semibold tabular-nums"
-        [class.text-danger]="outOfStock.length > 0"
+        [class.text-danger]="outOfStock().length > 0"
       >
-        {{ outOfStock.length }}
+        {{ outOfStock().length }}
       </p>
       <p class="mt-1 text-xs text-ink-muted">Customers cannot buy these</p>
     </a>
@@ -41,20 +88,17 @@
       class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
     >
       <p class="text-xs uppercase tracking-wide text-ink-subtle">Low stock</p>
-      <p class="mt-1 text-3xl font-semibold tabular-nums" [class.text-warn]="lowStock.length > 0">
-        {{ lowStock.length }}
+      <p class="mt-1 text-3xl font-semibold tabular-nums" [class.text-warn]="lowStock().length > 0">
+        {{ lowStock().length }}
       </p>
       <p class="mt-1 text-xs text-ink-muted">Five or fewer available</p>
     </a>
 
-    <a
-      routerLink="/orders"
-      class="card block p-5 transition-shadow hover:shadow-[var(--shadow-raised)]"
-    >
-      <p class="text-xs uppercase tracking-wide text-ink-subtle">Paid, awaiting fulfilment</p>
-      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">{{ openOrders().length }}</p>
-      <p class="mt-1 text-xs text-ink-muted">Ready to pick and pack</p>
-    </a>
+    <div class="card p-5">
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Reserved units</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">{{ reservedUnits() }}</p>
+      <p class="mt-1 text-xs text-ink-muted">Held by checkouts in progress</p>
+    </div>
   </div>
 
   <div class="grid gap-6 lg:grid-cols-2">
@@ -63,7 +107,7 @@
       description="Nothing can be sold while available stock is zero."
       [padded]="false"
     >
-      @if (outOfStock.length === 0 && lowStock.length === 0) {
+      @if (outOfStock().length === 0 && lowStock().length === 0) {
         <p class="px-5 py-8 text-center text-sm text-ink-muted">
           Every tracked SKU has stock available.
         </p>
@@ -78,7 +122,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (row of outOfStock.concat(lowStock); track row.id) {
+              @for (row of outOfStock().concat(lowStock()); track row.id) {
                 <tr>
                   <td>
                     <code class="text-xs text-ink-muted">{{ row.sku }}</code>
@@ -97,35 +141,39 @@
       }
     </ot-card>
 
-    <ot-card
-      title="Waiting to ship"
-      description="Paid orders that have not been handed to a carrier."
-      [padded]="false"
-    >
-      @if (openOrders().length === 0) {
-        <p class="px-5 py-8 text-center text-sm text-ink-muted">Nothing is waiting.</p>
+    <ot-card title="Order mix" description="Where the recent orders currently sit.">
+      @if (statusMix().length === 0) {
+        <p class="py-6 text-center text-sm text-ink-muted">No orders yet.</p>
       } @else {
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Order</th>
-                <th>Placed</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (order of openOrders().slice(0, 8); track order.id) {
-                <tr>
-                  <td>
-                    <code class="text-xs text-ink-muted">{{ order.id.slice(0, 8) }}</code>
-                  </td>
-                  <td class="text-ink-muted">{{ order.created_at | date: 'short' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ul class="space-y-3">
+          @for (slice of statusMix(); track slice.status) {
+            <li>
+              <div class="mb-1 flex items-center justify-between text-sm">
+                <span class="flex items-center gap-2">
+                  <ot-badge [tone]="toneFor(slice.status)">{{ readable(slice.status) }}</ot-badge>
+                </span>
+                <span class="tabular-nums text-ink-muted">
+                  {{ slice.count }} · {{ slice.percent }}%
+                </span>
+              </div>
+              <div class="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+                <div class="h-full rounded-full bg-brand-500" [style.width.%]="slice.percent"></div>
+              </div>
+            </li>
+          }
+        </ul>
       }
     </ot-card>
   </div>
+
+  @if (refunded().length > 0) {
+    <div class="mt-6">
+      <ot-card title="Cancelled and refunded" description="Value that did not complete.">
+        <p class="text-2xl font-semibold tabular-nums text-danger">
+          {{ refundedValue() | money: currency() }}
+        </p>
+        <p class="mt-1 text-xs text-ink-muted">Across {{ refunded().length }} order(s)</p>
+      </ot-card>
+    </div>
+  }
 }

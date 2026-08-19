@@ -1,0 +1,167 @@
+<ot-page-header
+  title="Users"
+  description="Accounts in Keycloak. Everyone who registers is a customer; administrators are promoted here."
+>
+  <ot-button variant="secondary" size="sm" (click)="load()">Refresh</ot-button>
+</ot-page-header>
+
+@if (error(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="danger">{{ message }}</ot-alert>
+  </div>
+}
+@if (notice(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="ok">{{ message }}</ot-alert>
+  </div>
+}
+
+<div class="mb-6">
+  <ot-filter-bar
+    searchId="user-search"
+    searchLabel="Search accounts"
+    searchPlaceholder="Name, username or e-mail"
+    [search]="search()"
+    (searchChange)="search.set($event)"
+    [facets]="facets"
+    [selected]="selected()"
+    (selectionChange)="selected.set($event)"
+    (cleared)="clearFilters()"
+  />
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <ot-spinner label="Loading accounts…" />
+  } @else if (visible().length === 0) {
+    <ot-empty-state
+      title="No accounts match"
+      description="Try removing a filter or clearing the search."
+    />
+  } @else {
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'name'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('name')"
+            >
+              Name
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'username'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('username')"
+            >
+              Username
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'email'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('email')"
+            >
+              E-mail
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'role'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('role')"
+            >
+              Role
+            </th>
+            <th class="w-px"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of visible(); track user.id) {
+            <tr otRowLink (activated)="start(user, user.isAdmin ? 'demote' : 'promote')">
+              <td>
+                <p class="font-medium text-ink">{{ displayName(user) }}</p>
+                @if (user.phone) {
+                  <p class="text-xs text-ink-subtle">{{ user.phone }}</p>
+                }
+              </td>
+              <td>
+                <code class="text-xs text-ink-muted">{{ user.username }}</code>
+              </td>
+              <td class="text-ink-muted">{{ user.email || '—' }}</td>
+              <td>
+                <div class="flex items-center gap-1.5">
+                  <ot-badge [tone]="user.isAdmin ? 'info' : 'neutral'">
+                    {{ user.isAdmin ? 'administrator' : 'customer' }}
+                  </ot-badge>
+                  @if (!user.enabled) {
+                    <ot-badge tone="danger">disabled</ot-badge>
+                  }
+                  @if (isSelf(user)) {
+                    <ot-badge tone="ok">you</ot-badge>
+                  }
+                </div>
+              </td>
+              <td>
+                <div class="flex justify-end gap-1">
+                  @if (user.isAdmin) {
+                    <ot-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="!!blockedReason(user, 'demote')"
+                      [title]="blockedReason(user, 'demote') || 'Remove administrator access'"
+                      (click)="start(user, 'demote')"
+                      >Make customer</ot-button
+                    >
+                  } @else {
+                    <ot-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="!!blockedReason(user, 'promote')"
+                      [title]="blockedReason(user, 'promote') || 'Grant administrator access'"
+                      (click)="start(user, 'promote')"
+                      >Make admin</ot-button
+                    >
+                  }
+                  <ot-button
+                    variant="ghost"
+                    size="sm"
+                    [disabled]="!!blockedReason(user, 'delete')"
+                    [title]="blockedReason(user, 'delete') || 'Delete this account'"
+                    (click)="start(user, 'delete')"
+                    >Delete</ot-button
+                  >
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<ot-modal
+  [open]="confirmOpen()"
+  [title]="action() === 'delete' ? 'Delete account' : 'Change role'"
+  (closed)="confirmOpen.set(false)"
+>
+  <p class="text-sm text-ink">{{ confirmText() }}</p>
+  @if (action() === 'delete') {
+    <div class="mt-3">
+      <ot-alert tone="danger">Deleting an account in Keycloak cannot be undone.</ot-alert>
+    </div>
+  }
+  <ng-container modalActions>
+    <ot-button variant="secondary" size="sm" (click)="confirmOpen.set(false)">Cancel</ot-button>
+    <ot-button
+      size="sm"
+      [variant]="action() === 'delete' ? 'danger' : 'primary'"
+      [loading]="working()"
+      (click)="confirm()"
+      >Confirm</ot-button
+    >
+  </ng-container>
+</ot-modal>

@@ -43,4 +43,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
     description: 'RMA requests',
     icon: 'M9 15 4 10l5-5m-5 5h10a6 6 0 0 1 0 12h-3',
   },
+  {
+    label: 'Users',
+    path: '/users',
+    description: 'Accounts and admin access',
+    icon: 'M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H2v-2a4 4 0 0 1 3-3.87m0 0a4 4 0 1 1 8 0m-8 0h8m4-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+  },
 ] as const;

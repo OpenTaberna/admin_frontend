@@ -16,6 +16,20 @@
   </div>
 }
 
+<div class="mb-4">
+  <ot-filter-bar
+    searchId="stock-search"
+    searchLabel="Search SKUs"
+    searchPlaceholder="SKU"
+    [search]="search()"
+    (searchChange)="search.set($event)"
+    [facets]="facets"
+    [selected]="selected()"
+    (selectionChange)="selected.set($event)"
+    (cleared)="clearFilters()"
+  />
+</div>
+
 <section class="card mb-6 p-5">
   <h2 class="mb-3 text-sm font-semibold text-ink">Track a new SKU</h2>
   <div class="flex flex-wrap items-end gap-3">
@@ -39,21 +53,64 @@
       title="No stock records"
       description="Add a SKU above so the checkout flow can reserve and commit units against it."
     />
+  } @else if (visible().length === 0) {
+    <ot-empty-state
+      title="No SKUs match"
+      description="Try removing a filter or clearing the search."
+    />
   } @else {
     <div class="table-scroll">
       <table class="data-table">
         <thead>
           <tr>
-            <th>SKU</th>
-            <th>Status</th>
-            <th class="text-right">On hand</th>
-            <th class="text-right">Reserved</th>
-            <th class="text-right">Available</th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'sku'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('sku')"
+            >
+              SKU
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'level'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('level')"
+            >
+              Status
+            </th>
+            <th
+              class="text-right"
+              ot-sort-header
+              [active]="sort.state().key === 'on_hand'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('on_hand')"
+            >
+              On hand
+            </th>
+            <th
+              class="text-right"
+              ot-sort-header
+              [active]="sort.state().key === 'reserved'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('reserved')"
+            >
+              Reserved
+            </th>
+            <th
+              class="text-right"
+              ot-sort-header
+              [active]="sort.state().key === 'available'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('available')"
+            >
+              Available
+            </th>
             <th class="w-px"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (row of rows(); track row.id) {
+          @for (row of visible(); track row.id) {
             <tr>
               <td>
                 <code class="text-xs text-ink-muted">{{ row.sku }}</code>
