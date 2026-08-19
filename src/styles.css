@@ -1,0 +1,182 @@
+/* =============================================================================
+   OpenTaberna Admin — global design file
+   =============================================================================
+
+   The single source of truth for how this application looks. Design decisions
+   live here as tokens; components consume them through Tailwind utilities and
+   the small set of semantic classes at the bottom.
+
+   The rule: no colour, radius, shadow or font-size literal in a component
+   template. If a component needs one that does not exist here, add it here.
+   That is what keeps a hundred screens looking like one product.
+   ============================================================================= */
+
+@import 'tailwindcss';
+
+/* -----------------------------------------------------------------------------
+   Tokens
+   -------------------------------------------------------------------------- */
+
+@theme {
+  /* Brand. Taberna is a tavern — warm, wooden, unfussy. */
+  --color-brand-50: oklch(0.971 0.021 70);
+  --color-brand-100: oklch(0.936 0.045 70);
+  --color-brand-200: oklch(0.878 0.081 68);
+  --color-brand-300: oklch(0.802 0.118 65);
+  --color-brand-400: oklch(0.723 0.146 55);
+  --color-brand-500: oklch(0.646 0.152 45);
+  --color-brand-600: oklch(0.567 0.148 40);
+  --color-brand-700: oklch(0.478 0.128 38);
+  --color-brand-800: oklch(0.403 0.104 38);
+  --color-brand-900: oklch(0.349 0.086 39);
+
+  /* Neutrals — the surfaces most of the admin actually is. */
+  --color-surface: oklch(1 0 0);
+  --color-surface-muted: oklch(0.985 0.002 250);
+  --color-surface-sunken: oklch(0.968 0.004 250);
+  --color-line: oklch(0.922 0.005 250);
+  --color-line-strong: oklch(0.86 0.007 250);
+  --color-ink: oklch(0.21 0.012 250);
+  --color-ink-muted: oklch(0.47 0.012 250);
+  --color-ink-subtle: oklch(0.62 0.011 250);
+  --color-ink-inverse: oklch(0.985 0.002 250);
+
+  /* Status. Used for order state, stock level and returns alike, so the same
+     colour always means the same kind of thing. */
+  --color-ok: oklch(0.63 0.14 155);
+  --color-ok-soft: oklch(0.95 0.04 155);
+  --color-warn: oklch(0.75 0.15 80);
+  --color-warn-soft: oklch(0.96 0.05 85);
+  --color-danger: oklch(0.58 0.19 25);
+  --color-danger-soft: oklch(0.95 0.04 25);
+  --color-info: oklch(0.62 0.14 250);
+  --color-info-soft: oklch(0.95 0.03 250);
+
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+
+  --shadow-card: 0 1px 2px 0 oklch(0.21 0.012 250 / 0.05);
+  --shadow-raised: 0 4px 16px -2px oklch(0.21 0.012 250 / 0.1);
+  --shadow-overlay: 0 24px 48px -12px oklch(0.21 0.012 250 / 0.25);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --sidenav-width: 16rem;
+}
+
+/* -----------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface-sunken);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* A single visible focus treatment everywhere. Keyboard users get one
+     consistent signal instead of each control inventing its own. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  th {
+    font-weight: 600;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   Semantic classes
+   -----------------------------------------------------------------------------
+   Only for patterns repeated across many components, where a utility string
+   would other-wise be copied verbatim and drift. Anything used once stays a
+   utility in the template.
+   -------------------------------------------------------------------------- */
+
+@layer components {
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-ink-muted);
+    margin-bottom: 0.375rem;
+  }
+
+  .field-control {
+    width: 100%;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-control);
+    background-color: var(--color-surface);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-ink);
+  }
+
+  .field-control::placeholder {
+    color: var(--color-ink-subtle);
+  }
+
+  .field-control:disabled {
+    background-color: var(--color-surface-sunken);
+    color: var(--color-ink-subtle);
+  }
+
+  .field-error {
+    margin-top: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--color-danger);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+  }
+
+  .data-table thead th {
+    text-align: left;
+    padding: 0.625rem 1rem;
+    color: var(--color-ink-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: var(--color-surface-muted);
+    border-bottom: 1px solid var(--color-line);
+    white-space: nowrap;
+  }
+
+  .data-table tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-line);
+    vertical-align: middle;
+  }
+
+  .data-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .data-table tbody tr:hover {
+    background-color: var(--color-surface-muted);
+  }
+
+  /* Wide tables scroll inside their own container so the page itself never
+     scrolls sideways. */
+  .table-scroll {
+    overflow-x: auto;
+  }
+}

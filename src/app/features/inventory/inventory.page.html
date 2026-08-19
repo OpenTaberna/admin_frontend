@@ -1,0 +1,93 @@
+<ot-page-header
+  title="Inventory"
+  description="Stock per SKU. Available is what a customer can buy — reserved units are held by checkouts in progress and cannot be edited here."
+>
+  <ot-button variant="secondary" size="sm" (click)="load()">Refresh</ot-button>
+</ot-page-header>
+
+@if (error(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="danger">{{ message }}</ot-alert>
+  </div>
+}
+@if (notice(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="ok">{{ message }}</ot-alert>
+  </div>
+}
+
+<section class="card mb-6 p-5">
+  <h2 class="mb-3 text-sm font-semibold text-ink">Track a new SKU</h2>
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="min-w-48 flex-1">
+      <label class="field-label" for="new-sku">SKU</label>
+      <input id="new-sku" class="field-control" [(ngModel)]="newSku" placeholder="TAB-0001" />
+    </div>
+    <div class="w-36">
+      <label class="field-label" for="new-on-hand">On hand</label>
+      <input id="new-on-hand" type="number" min="0" class="field-control" [(ngModel)]="newOnHand" />
+    </div>
+    <ot-button size="sm" (click)="create()">Add</ot-button>
+  </div>
+</section>
+
+<div class="card">
+  @if (loading()) {
+    <ot-spinner label="Loading stock…" />
+  } @else if (rows().length === 0) {
+    <ot-empty-state
+      title="No stock records"
+      description="Add a SKU above so the checkout flow can reserve and commit units against it."
+    />
+  } @else {
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Status</th>
+            <th class="text-right">On hand</th>
+            <th class="text-right">Reserved</th>
+            <th class="text-right">Available</th>
+            <th class="w-px"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td>
+                <code class="text-xs text-ink-muted">{{ row.sku }}</code>
+              </td>
+              <td>
+                <ot-badge [tone]="tone(row)">{{ label(row) }}</ot-badge>
+              </td>
+              <td class="text-right">
+                <input
+                  type="number"
+                  min="0"
+                  class="field-control w-24 text-right tabular-nums"
+                  [value]="drafts()[row.id]"
+                  (input)="setDraft(row.id, $any($event.target).value)"
+                  [attr.aria-label]="'On hand for ' + row.sku"
+                />
+              </td>
+              <td class="text-right tabular-nums text-ink-muted">{{ row.reserved }}</td>
+              <td class="text-right tabular-nums font-medium">{{ available(row) }}</td>
+              <td>
+                <div class="flex justify-end">
+                  <ot-button
+                    size="sm"
+                    [disabled]="!isDirty(row)"
+                    [loading]="savingId() === row.id"
+                    (click)="save(row)"
+                    >Save</ot-button
+                  >
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

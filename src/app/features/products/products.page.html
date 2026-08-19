@@ -1,0 +1,131 @@
+<ot-page-header
+  title="Products"
+  description="The catalogue customers browse. Only active products are visible in the store — draft and archived stay hidden without being deleted."
+>
+  <ot-button variant="secondary" size="sm" (click)="load()">Refresh</ot-button>
+  <ot-button size="sm" (click)="openCreate()">New product</ot-button>
+</ot-page-header>
+
+@if (error(); as message) {
+  <div class="mb-4">
+    <ot-alert tone="danger">{{ message }}</ot-alert>
+  </div>
+}
+
+<div class="card">
+  @if (loading()) {
+    <ot-spinner label="Loading catalogue…" />
+  } @else if (items().length === 0) {
+    <ot-empty-state
+      title="No products yet"
+      description="Nothing is listed in the store. Add the first product to make it visible to customers."
+    >
+      <ot-button size="sm" (click)="openCreate()">New product</ot-button>
+    </ot-empty-state>
+  } @else {
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Status</th>
+            <th class="text-right">Price</th>
+            <th class="w-px"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.uuid) {
+            <tr>
+              <td>
+                <p class="font-medium text-ink">{{ item.name }}</p>
+                <p class="text-xs text-ink-subtle">{{ item.brand || '—' }}</p>
+              </td>
+              <td>
+                <code class="text-xs text-ink-muted">{{ item.sku }}</code>
+              </td>
+              <td>
+                <ot-badge [tone]="toneFor(item.status)">{{ item.status }}</ot-badge>
+              </td>
+              <td class="text-right tabular-nums">
+                {{ item.price?.amount | money: item.price?.currency || 'EUR' }}
+              </td>
+              <td>
+                <div class="flex justify-end gap-1">
+                  <ot-button variant="ghost" size="sm" (click)="openEdit(item)">Edit</ot-button>
+                  <ot-button variant="ghost" size="sm" (click)="remove(item)">Delete</ot-button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<ot-modal
+  [open]="formOpen()"
+  [title]="editing() ? 'Edit product' : 'New product'"
+  (closed)="formOpen.set(false)"
+>
+  <form [formGroup]="form" class="space-y-4" (ngSubmit)="save()">
+    <div>
+      <label class="field-label" for="sku">SKU</label>
+      <input
+        id="sku"
+        class="field-control"
+        formControlName="sku"
+        [attr.disabled]="editing() ? true : null"
+        placeholder="TAB-0001"
+      />
+      @if (editing()) {
+        <p class="mt-1 text-xs text-ink-subtle">
+          SKU cannot change — orders hold a price snapshot against it.
+        </p>
+      }
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="field-label" for="name">Name</label>
+        <input id="name" class="field-control" formControlName="name" />
+      </div>
+      <div>
+        <label class="field-label" for="slug">Slug</label>
+        <input id="slug" class="field-control" formControlName="slug" placeholder="house-red" />
+      </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <label class="field-label" for="brand">Brand</label>
+        <input id="brand" class="field-control" formControlName="brand" />
+      </div>
+      <div>
+        <label class="field-label" for="amount">Price (cents)</label>
+        <input id="amount" type="number" min="0" class="field-control" formControlName="amount" />
+      </div>
+      <div>
+        <label class="field-label" for="status">Status</label>
+        <select id="status" class="field-control" formControlName="status">
+          <option value="draft">Draft — not visible in the store</option>
+          <option value="active">Active — visible to customers</option>
+          <option value="archived">Archived — retired, hidden</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="field-label" for="short">Short description</label>
+      <input id="short" class="field-control" formControlName="short_description" />
+    </div>
+  </form>
+
+  <ng-container modalActions>
+    <ot-button variant="secondary" size="sm" (click)="formOpen.set(false)">Cancel</ot-button>
+    <ot-button size="sm" [loading]="saving()" (click)="save()">
+      {{ editing() ? 'Save changes' : 'Create product' }}
+    </ot-button>
+  </ng-container>
+</ot-modal>
