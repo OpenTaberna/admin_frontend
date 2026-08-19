@@ -1,8 +1,3 @@
-<ot-page-header
-  title="Overview"
-  description="Money, fulfilment and stock across the most recent 100 orders."
-/>
-
 @if (loading()) {
   <ot-spinner label="Gathering the shop's state…" />
 } @else {
@@ -141,7 +136,7 @@
       }
     </ot-card>
 
-    <ot-card title="Order mix" description="Where the recent orders currently sit.">
+    <ot-card title="Order mix" description="Across the most recent 100 orders.">
       @if (statusMix().length === 0) {
         <p class="py-6 text-center text-sm text-ink-muted">No orders yet.</p>
       } @else {

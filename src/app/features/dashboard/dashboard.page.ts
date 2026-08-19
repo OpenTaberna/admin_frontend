@@ -8,13 +8,7 @@ import { CatalogueService } from '../../core/api/catalogue.service';
 import { InventoryService } from '../../core/api/inventory.service';
 import { OrdersService } from '../../core/api/orders.service';
 import { InventoryItem, Item, OrderSummary } from '../../core/models/api.models';
-import {
-  BadgeComponent,
-  CardComponent,
-  MoneyPipe,
-  PageHeaderComponent,
-  SpinnerComponent,
-} from '../../shared/ui';
+import { BadgeComponent, CardComponent, MoneyPipe, SpinnerComponent } from '../../shared/ui';
 
 /** Order states whose value counts as money actually taken. */
 const EARNED: readonly string[] = ['paid', 'ready_to_ship', 'shipped'];
@@ -33,15 +27,7 @@ const EARNED: readonly string[] = ['paid', 'ready_to_ship', 'shipped'];
 @Component({
   selector: 'ot-dashboard-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    PageHeaderComponent,
-    CardComponent,
-    BadgeComponent,
-    SpinnerComponent,
-    MoneyPipe,
-  ],
+  imports: [CommonModule, RouterLink, CardComponent, BadgeComponent, SpinnerComponent, MoneyPipe],
   templateUrl: './dashboard.page.html',
 })
 export class DashboardPage {

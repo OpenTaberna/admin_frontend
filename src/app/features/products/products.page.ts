@@ -13,7 +13,6 @@ import {
   EmptyStateComponent,
   ModalComponent,
   MoneyPipe,
-  PageHeaderComponent,
   SpinnerComponent,
 } from '../../shared/ui';
 
@@ -30,7 +29,6 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    PageHeaderComponent,
     ButtonComponent,
     BadgeComponent,
     EmptyStateComponent,
@@ -54,6 +52,10 @@ export class ProductsPage {
   readonly saving = signal(false);
   readonly formOpen = signal(false);
   readonly editing = signal<Item | null>(null);
+
+  /** File chosen in the form, uploaded after the item itself is saved. */
+  readonly pendingImage = signal<File | null>(null);
+  readonly imagePreview = signal<string | null>(null);
 
   readonly search = signal('');
   readonly selected = signal<Record<string, string[]>>({ status: [] });
@@ -138,14 +140,44 @@ export class ProductsPage {
     });
   }
 
+  imageUrl(item: Item): string | null {
+    return this.catalogue.imageUrl(item);
+  }
+
+  pickImage(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.pendingImage.set(file);
+
+    // Show the chosen file straight away rather than after a round trip, so
+    // the operator can see they picked the right picture.
+    const previous = this.imagePreview();
+    if (previous?.startsWith('blob:')) {
+      URL.revokeObjectURL(previous);
+    }
+    this.imagePreview.set(file ? URL.createObjectURL(file) : null);
+  }
+
+  private clearPendingImage(): void {
+    const preview = this.imagePreview();
+    if (preview?.startsWith('blob:')) {
+      URL.revokeObjectURL(preview);
+    }
+    this.pendingImage.set(null);
+    this.imagePreview.set(null);
+  }
+
   openCreate(): void {
     this.editing.set(null);
+    this.clearPendingImage();
     this.form.reset({ status: 'active', currency: 'EUR', amount: 0 });
     this.formOpen.set(true);
   }
 
   openEdit(item: Item): void {
     this.editing.set(item);
+    this.clearPendingImage();
+    this.imagePreview.set(this.catalogue.imageUrl(item));
     this.form.reset({
       sku: item.sku,
       name: item.name,
@@ -192,16 +224,39 @@ export class ProductsPage {
         } as Partial<Item>);
 
     request.subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.formOpen.set(false);
-        this.load();
+      next: (saved) => {
+        const image = this.pendingImage();
+        if (!image) {
+          this.finishSave();
+          return;
+        }
+        // The image can only be attached once the item exists, so it follows
+        // the save rather than riding along with it.
+        this.catalogue.uploadImage(saved.uuid, image).subscribe({
+          next: () => this.finishSave(),
+          error: (err) => {
+            this.saving.set(false);
+            this.formOpen.set(false);
+            this.load();
+            // The product itself saved; say so, rather than implying it did not.
+            this.error.set(
+              this.message(err, 'The product was saved, but the image could not be uploaded.'),
+            );
+          },
+        });
       },
       error: (err) => {
         this.saving.set(false);
         this.error.set(this.message(err, 'Saving the product failed.'));
       },
     });
+  }
+
+  private finishSave(): void {
+    this.saving.set(false);
+    this.formOpen.set(false);
+    this.clearPendingImage();
+    this.load();
   }
 
   remove(item: Item): void {

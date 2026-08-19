@@ -14,7 +14,6 @@ import {
   EmptyStateComponent,
   ModalComponent,
   MoneyPipe,
-  PageHeaderComponent,
   SpinnerComponent,
 } from '../../shared/ui';
 
@@ -40,7 +39,6 @@ const STATUS_TONES: Record<OrderStatus, 'ok' | 'warn' | 'danger' | 'info' | 'neu
   imports: [
     CommonModule,
     FormsModule,
-    PageHeaderComponent,
     ButtonComponent,
     BadgeComponent,
     EmptyStateComponent,

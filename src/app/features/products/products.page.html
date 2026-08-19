@@ -1,10 +1,19 @@
-<ot-page-header
-  title="Products"
-  description="The catalogue customers browse. Only active products are visible in the store — draft and archived stay hidden without being deleted."
->
-  <ot-button variant="secondary" size="sm" (click)="load()">Refresh</ot-button>
-  <ot-button size="sm" (click)="openCreate()">New product</ot-button>
-</ot-page-header>
+<div class="mb-6">
+  <ot-filter-bar
+    searchId="product-search"
+    searchLabel="Search products"
+    searchPlaceholder="Name, SKU or brand"
+    [search]="search()"
+    (searchChange)="search.set($event)"
+    [facets]="facets"
+    [selected]="selected()"
+    (selectionChange)="selected.set($event)"
+    (cleared)="clearFilters()"
+  >
+    <ot-button barActions variant="secondary" size="sm" (click)="load()">Refresh</ot-button>
+    <ot-button barActions size="sm" (click)="openCreate()">New product</ot-button>
+  </ot-filter-bar>
+</div>
 
 @if (error(); as message) {
   <div class="mb-4">
@@ -32,6 +41,7 @@
       <table class="data-table">
         <thead>
           <tr>
+            <th class="w-px"><span class="sr-only">Image</span></th>
             <th
               ot-sort-header
               [active]="sort.state().key === 'name'"
@@ -71,6 +81,35 @@
         <tbody>
           @for (item of visible(); track item.uuid) {
             <tr otRowLink (activated)="openEdit(item)">
+              <td>
+                @if (imageUrl(item); as src) {
+                  <img
+                    [src]="src"
+                    [alt]="item.name"
+                    class="size-10 rounded-[var(--radius-control)] border border-line object-cover"
+                    loading="lazy"
+                  />
+                } @else {
+                  <div
+                    class="flex size-10 items-center justify-center rounded-[var(--radius-control)] border border-dashed border-line-strong text-ink-subtle"
+                    aria-hidden="true"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      class="size-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M3 16.5 8 12l3 3 4-5 6 7.5M3 5.5h18v13H3z"
+                      />
+                    </svg>
+                  </div>
+                }
+              </td>
               <td>
                 <p class="font-medium text-ink">{{ item.name }}</p>
                 <p class="text-xs text-ink-subtle">{{ item.brand || '—' }}</p>
@@ -153,6 +192,50 @@
     <div>
       <label class="field-label" for="short">Short description</label>
       <input id="short" class="field-control" formControlName="short_description" />
+    </div>
+
+    <div>
+      <span class="field-label">Product image</span>
+      <div class="flex items-center gap-4">
+        @if (imagePreview(); as src) {
+          <img
+            [src]="src"
+            alt="Product image preview"
+            class="size-20 rounded-[var(--radius-card)] border border-line object-cover"
+          />
+        } @else {
+          <div
+            class="flex size-20 items-center justify-center rounded-[var(--radius-card)] border border-dashed border-line-strong text-ink-subtle"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              class="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 16.5 8 12l3 3 4-5 6 7.5M3 5.5h18v13H3z"
+              />
+            </svg>
+          </div>
+        }
+        <div class="min-w-0">
+          <input
+            id="image"
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            class="block w-full text-sm text-ink-muted file:mr-3 file:rounded-[var(--radius-control)] file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-sm file:text-ink hover:file:bg-line"
+            (change)="pickImage($event)"
+          />
+          <p class="mt-1 text-xs text-ink-subtle">
+            JPEG, PNG, GIF or WebP, up to 5 MB. Shown to customers in the store.
+          </p>
+        </div>
+      </div>
     </div>
   </form>
 
