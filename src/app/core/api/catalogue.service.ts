@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { Item, Paginated } from '../models/api.models';
+import { environment } from '../../../environments/environment';
 import { ApiService } from './api.service';
 
 /**
@@ -38,5 +39,29 @@ export class CatalogueService {
 
   remove(uuid: string): Observable<void> {
     return this.api.delete<void>(`/v1/items/${uuid}`);
+  }
+
+  /**
+   * Upload the product image.
+   *
+   * Sent as multipart form data. The Content-Type header is deliberately not
+   * set: the browser has to add it itself so it can include the multipart
+   * boundary, and setting it by hand produces a request the server cannot parse.
+   */
+  uploadImage(uuid: string, file: File): Observable<Item> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.api.put<Item>(`/v1/items/${uuid}/image`, form);
+  }
+
+  /**
+   * Absolute URL of an item's image.
+   *
+   * The API stores a relative path so the object store can move without
+   * rewriting stored data; this puts the configured host in front of it.
+   */
+  imageUrl(item: Item): string | null {
+    const path = item.media?.main_image;
+    return path ? `${environment.apiBaseUrl}${path}` : null;
   }
 }

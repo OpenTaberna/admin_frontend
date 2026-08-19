@@ -91,6 +91,12 @@ export interface FilterOption {
             Clear all
           </button>
         }
+
+        <!-- Page actions sit on the same row as the filters, so they cost no
+             vertical space of their own. -->
+        <div class="ml-auto flex items-center gap-2">
+          <ng-content select="[barActions]" />
+        </div>
       </div>
 
       @if (chips.length > 0) {

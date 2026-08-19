@@ -4,13 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ReturnsService } from '../../core/api/returns.service';
 import { ReturnStatus } from '../../core/models/api.models';
-import {
-  AlertComponent,
-  ButtonComponent,
-  CardComponent,
-  ModalComponent,
-  PageHeaderComponent,
-} from '../../shared/ui';
+import { AlertComponent, ButtonComponent, CardComponent, ModalComponent } from '../../shared/ui';
 
 /**
  * Return (RMA) handling.
@@ -29,7 +23,6 @@ import {
   imports: [
     CommonModule,
     FormsModule,
-    PageHeaderComponent,
     ButtonComponent,
     CardComponent,
     AlertComponent,

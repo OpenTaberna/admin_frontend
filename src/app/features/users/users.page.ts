@@ -11,7 +11,6 @@ import {
   ButtonComponent,
   EmptyStateComponent,
   ModalComponent,
-  PageHeaderComponent,
   SpinnerComponent,
 } from '../../shared/ui';
 
@@ -32,7 +31,6 @@ type PendingAction = 'promote' | 'demote' | 'delete';
   standalone: true,
   imports: [
     CommonModule,
-    PageHeaderComponent,
     ButtonComponent,
     BadgeComponent,
     EmptyStateComponent,

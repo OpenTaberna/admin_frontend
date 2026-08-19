@@ -11,7 +11,6 @@ import {
   BadgeComponent,
   ButtonComponent,
   EmptyStateComponent,
-  PageHeaderComponent,
   SpinnerComponent,
 } from '../../shared/ui';
 
@@ -28,7 +27,6 @@ import {
   imports: [
     CommonModule,
     FormsModule,
-    PageHeaderComponent,
     ButtonComponent,
     BadgeComponent,
     EmptyStateComponent,

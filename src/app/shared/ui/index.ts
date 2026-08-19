@@ -5,5 +5,4 @@ export * from './card';
 export * from './empty-state';
 export * from './modal';
 export * from './money.pipe';
-export * from './page-header';
 export * from './spinner';
