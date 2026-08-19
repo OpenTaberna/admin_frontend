@@ -38,6 +38,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/orders/orders.page').then((m) => m.OrdersPage),
       },
       {
+        path: 'users',
+        title: 'Users · OpenTaberna Admin',
+        loadComponent: () => import('./features/users/users.page').then((m) => m.UsersPage),
+      },
+      {
         path: 'returns',
         title: 'Returns · OpenTaberna Admin',
         loadComponent: () => import('./features/returns/returns.page').then((m) => m.ReturnsPage),

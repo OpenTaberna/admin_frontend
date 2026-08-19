@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { environment } from '../../../environments/environment';
 import { OrdersService } from '../../core/api/orders.service';
+import { FilterBarComponent } from '../../shared/filters/filter-bar';
+import { RowLinkDirective, SortHeaderComponent, createSort, sortRows } from '../../shared/table';
 import { AdminOrderDetail, OrderStatus, OrderSummary } from '../../core/models/api.models';
 import {
   AlertComponent,
@@ -46,6 +48,9 @@ const STATUS_TONES: Record<OrderStatus, 'ok' | 'warn' | 'danger' | 'info' | 'neu
     ModalComponent,
     AlertComponent,
     MoneyPipe,
+    FilterBarComponent,
+    SortHeaderComponent,
+    RowLinkDirective,
   ],
   templateUrl: './orders.page.html',
 })
@@ -71,7 +76,61 @@ export class OrdersPage {
     'refunded',
   ];
 
-  filter: OrderStatus | '' = '';
+  readonly search = signal('');
+  readonly selected = signal<Record<string, string[]>>({ status: [] });
+  readonly sort = createSort<'placed' | 'status' | 'total' | 'order'>({
+    key: 'placed',
+    direction: 'desc',
+  });
+
+  readonly facets = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'draft', label: 'Draft' },
+        { value: 'pending_payment', label: 'Pending payment' },
+        { value: 'paid', label: 'Paid' },
+        { value: 'ready_to_ship', label: 'Ready to ship' },
+        { value: 'shipped', label: 'Shipped' },
+        { value: 'cancelled', label: 'Cancelled' },
+        { value: 'refunded', label: 'Refunded' },
+      ],
+    },
+  ];
+
+  /**
+   * Filtering happens client-side so several statuses can be combined at once —
+   * the API's status parameter takes only one.
+   */
+  readonly visible = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    const statuses = this.selected()['status'] ?? [];
+
+    const filtered = this.rows().filter((order) => {
+      if (term && !order.id.toLowerCase().includes(term)) return false;
+      if (statuses.length > 0 && !statuses.includes(order.status)) return false;
+      return true;
+    });
+
+    return sortRows(filtered, this.sort.state(), (order, key) => {
+      switch (key) {
+        case 'placed':
+          return order.created_at;
+        case 'status':
+          return order.status;
+        case 'total':
+          return order.total_amount;
+        case 'order':
+          return order.id;
+      }
+    });
+  });
+
+  clearFilters(): void {
+    this.search.set('');
+    this.selected.set({ status: [] });
+  }
   overrideStatus: OrderStatus = 'paid';
   overrideReason = '';
   private overrideTarget: string | null = null;
@@ -83,7 +142,7 @@ export class OrdersPage {
   load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.orders.list(this.filter || undefined, 0, 100).subscribe({
+    this.orders.list(undefined, 0, 100).subscribe({
       next: (res) => {
         this.rows.set(res.orders ?? []);
         this.loading.set(false);

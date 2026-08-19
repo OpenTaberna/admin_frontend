@@ -11,23 +11,18 @@
   </div>
 }
 
-<div class="card mb-6 p-4">
-  <div class="flex flex-wrap items-end gap-3">
-    <div class="w-56">
-      <label class="field-label" for="status-filter">Filter by status</label>
-      <select
-        id="status-filter"
-        class="field-control"
-        [(ngModel)]="filter"
-        (ngModelChange)="load()"
-      >
-        <option value="">All statuses</option>
-        @for (s of statuses; track s) {
-          <option [value]="s">{{ readable(s) }}</option>
-        }
-      </select>
-    </div>
-  </div>
+<div class="mb-6">
+  <ot-filter-bar
+    searchId="order-search"
+    searchLabel="Search orders"
+    searchPlaceholder="Order id"
+    [search]="search()"
+    (searchChange)="search.set($event)"
+    [facets]="facets"
+    [selected]="selected()"
+    (selectionChange)="selected.set($event)"
+    (cleared)="clearFilters()"
+  />
 </div>
 
 <div class="card">
@@ -40,16 +35,45 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Order</th>
-            <th>Status</th>
-            <th>Placed</th>
-            <th class="text-right">Total</th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'order'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('order')"
+            >
+              Order
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'status'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('status')"
+            >
+              Status
+            </th>
+            <th
+              ot-sort-header
+              [active]="sort.state().key === 'placed'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('placed')"
+            >
+              Placed
+            </th>
+            <th
+              class="text-right"
+              ot-sort-header
+              [active]="sort.state().key === 'total'"
+              [direction]="sort.state().direction"
+              (sorted)="sort.toggle('total')"
+            >
+              Total
+            </th>
             <th class="w-px"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (order of rows(); track order.id) {
-            <tr>
+          @for (order of visible(); track order.id) {
+            <tr otRowLink (activated)="open(order)">
               <td>
                 <code class="text-xs text-ink-muted">{{ order.id.slice(0, 8) }}</code>
               </td>

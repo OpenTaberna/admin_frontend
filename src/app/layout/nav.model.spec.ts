@@ -1,13 +1,14 @@
 import { NAV_ITEMS } from './nav.model';
 
 describe('side navigation', () => {
-  it('exposes the five administration areas', () => {
+  it('exposes the six administration areas', () => {
     expect(NAV_ITEMS.map((i) => i.path)).toEqual([
       '/dashboard',
       '/products',
       '/inventory',
       '/orders',
       '/returns',
+      '/users',
     ]);
   });
 

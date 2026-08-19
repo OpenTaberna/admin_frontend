@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CatalogueService } from '../../core/api/catalogue.service';
+import { FilterBarComponent } from '../../shared/filters/filter-bar';
+import { RowLinkDirective, SortHeaderComponent, createSort, sortRows } from '../../shared/table';
 import { Item, ItemStatus } from '../../core/models/api.models';
 import {
   AlertComponent,
@@ -36,6 +38,9 @@ import {
     ModalComponent,
     AlertComponent,
     MoneyPipe,
+    FilterBarComponent,
+    SortHeaderComponent,
+    RowLinkDirective,
   ],
   templateUrl: './products.page.html',
 })
@@ -49,6 +54,58 @@ export class ProductsPage {
   readonly saving = signal(false);
   readonly formOpen = signal(false);
   readonly editing = signal<Item | null>(null);
+
+  readonly search = signal('');
+  readonly selected = signal<Record<string, string[]>>({ status: [] });
+  readonly sort = createSort<'name' | 'sku' | 'status' | 'price'>({
+    key: 'name',
+    direction: 'asc',
+  });
+
+  readonly facets = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'draft', label: 'Draft' },
+        { value: 'archived', label: 'Archived' },
+      ],
+    },
+  ];
+
+  /** Search, facets and sorting applied together. */
+  readonly visible = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    const statuses = this.selected()['status'] ?? [];
+
+    const filtered = this.items().filter((item) => {
+      if (term) {
+        const haystack = `${item.name} ${item.sku} ${item.brand ?? ''}`.toLowerCase();
+        if (!haystack.includes(term)) return false;
+      }
+      if (statuses.length > 0 && !statuses.includes(item.status)) return false;
+      return true;
+    });
+
+    return sortRows(filtered, this.sort.state(), (item, key) => {
+      switch (key) {
+        case 'name':
+          return item.name;
+        case 'sku':
+          return item.sku;
+        case 'status':
+          return item.status;
+        case 'price':
+          return item.price?.amount ?? 0;
+      }
+    });
+  });
+
+  clearFilters(): void {
+    this.search.set('');
+    this.selected.set({ status: [] });
+  }
 
   readonly form = this.fb.nonNullable.group({
     sku: ['', [Validators.required, Validators.maxLength(64)]],

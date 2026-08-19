@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { InventoryService } from '../../core/api/inventory.service';
+import { FilterBarComponent } from '../../shared/filters/filter-bar';
+import { SortHeaderComponent, createSort, sortRows } from '../../shared/table';
 import { InventoryItem } from '../../core/models/api.models';
 import {
   AlertComponent,
@@ -32,6 +34,8 @@ import {
     EmptyStateComponent,
     SpinnerComponent,
     AlertComponent,
+    FilterBarComponent,
+    SortHeaderComponent,
   ],
   templateUrl: './inventory.page.html',
 })
@@ -47,6 +51,56 @@ export class InventoryPage {
 
   newSku = '';
   newOnHand = 0;
+
+  readonly search = signal('');
+  readonly selected = signal<Record<string, string[]>>({ level: [] });
+  readonly sort = createSort<'sku' | 'level' | 'on_hand' | 'reserved' | 'available'>({
+    key: 'sku',
+    direction: 'asc',
+  });
+
+  readonly facets = [
+    {
+      key: 'level',
+      label: 'Stock level',
+      options: [
+        { value: 'danger', label: 'Out of stock' },
+        { value: 'warn', label: 'Low' },
+        { value: 'ok', label: 'In stock' },
+      ],
+    },
+  ];
+
+  readonly visible = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    const levels = this.selected()['level'] ?? [];
+
+    const filtered = this.rows().filter((row) => {
+      if (term && !row.sku.toLowerCase().includes(term)) return false;
+      if (levels.length > 0 && !levels.includes(this.tone(row))) return false;
+      return true;
+    });
+
+    return sortRows(filtered, this.sort.state(), (row, key) => {
+      switch (key) {
+        case 'sku':
+          return row.sku;
+        case 'level':
+          return this.available(row);
+        case 'on_hand':
+          return row.on_hand;
+        case 'reserved':
+          return row.reserved;
+        case 'available':
+          return this.available(row);
+      }
+    });
+  });
+
+  clearFilters(): void {
+    this.search.set('');
+    this.selected.set({ level: [] });
+  }
 
   constructor() {
     this.load();
