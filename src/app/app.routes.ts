@@ -44,6 +44,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/orders/orders.page').then((m) => m.OrdersPage),
       },
       {
+        path: 'errors',
+        title: 'Frontend errors · OpenTaberna Admin',
+        loadComponent: () => import('./features/errors/errors.page').then((m) => m.ErrorsPage),
+      },
+      {
         path: 'users',
         title: 'Users · OpenTaberna Admin',
         loadComponent: () => import('./features/users/users.page').then((m) => m.UsersPage),

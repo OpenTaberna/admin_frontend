@@ -50,6 +50,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: 'M9 15 4 10l5-5m-5 5h10a6 6 0 0 1 0 12h-3',
   },
   {
+    label: 'Errors',
+    path: '/errors',
+    description: 'Uncaught frontend faults',
+    icon: 'M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z',
+  },
+  {
     label: 'Users',
     path: '/users',
     description: 'Accounts and admin access',

@@ -11,6 +11,14 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'http://localhost:8000',
+  /**
+   * Uncaught error reporting. Off by default; requires FRONTEND_ERRORS_ENABLED
+   * on the API, which otherwise answers the endpoint with a 404.
+   */
+  errorReporting: {
+    enabled: false,
+    endpoint: '/v1/telemetry/errors',
+  },
   keycloak: {
     url: 'http://localhost:8080',
     realm: 'opentaberna',
