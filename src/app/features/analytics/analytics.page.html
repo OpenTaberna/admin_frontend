@@ -143,6 +143,131 @@
       </ot-card>
     </div>
 
+    <!-- Shopper funnel -->
+    @if (storefront(); as shop) {
+      <ot-card
+        title="Shopper funnel"
+        description="What happens before an order exists. Reported by browsers, so the first four steps are a floor rather than an exact count."
+      >
+        @if (storefrontOff()) {
+          <div
+            class="rounded-[var(--radius-control)] border border-line bg-surface-muted px-4 py-6 text-center text-sm text-ink-muted"
+          >
+            <p class="font-medium text-ink">Storefront analytics is switched off.</p>
+            <p class="mt-1 text-xs">
+              This deployment is not collecting shopper events, so there is nothing to show — which
+              is not the same as nobody visiting. Set
+              <code class="rounded bg-surface-sunken px-1 py-0.5"
+                >STOREFRONT_ANALYTICS_ENABLED</code
+              >
+              on the API and enable it in the storefront configuration to start.
+            </p>
+          </div>
+        } @else {
+          <div class="grid gap-6 lg:grid-cols-2">
+            <div>
+              @if (storefrontChart(); as config) {
+                <ot-chart
+                  [config]="config"
+                  label="Sessions reaching each shopper step"
+                  [height]="220"
+                />
+              }
+              <p class="mt-2 text-[0.6875rem] text-ink-subtle">
+                {{ shop.page_views }} page view(s) in this period.
+              </p>
+            </div>
+
+            <div class="space-y-3">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left text-xs text-ink-muted">
+                    <th class="pb-2 font-medium">Step</th>
+                    <th class="pb-2 text-right font-medium">Sessions</th>
+                    <th class="pb-2 text-right font-medium">Of visits</th>
+                    <th class="pb-2 text-right font-medium">Lost</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                  @for (step of shop.steps; track step.step) {
+                    <tr>
+                      <td class="py-2 text-ink">
+                        {{ step.label }}
+                        @if (step.step === 'paid') {
+                          <ot-badge tone="info">exact</ot-badge>
+                        }
+                      </td>
+                      <td class="py-2 text-right font-medium text-ink">{{ step.sessions }}</td>
+                      <td class="py-2 text-right text-ink-muted">
+                        {{ percent(step.conversion_from_start) }}
+                      </td>
+                      <td class="py-2 text-right">
+                        @if (step.drop_off_from_previous) {
+                          <span class="text-danger">−{{ step.drop_off_from_previous }}</span>
+                        } @else {
+                          <span class="text-ink-subtle">—</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <p
+                class="rounded-[var(--radius-control)] bg-surface-muted px-3 py-2 text-[0.6875rem] text-ink-muted"
+              >
+                Blocked scripts and closed tabs lose events, so every step except
+                <strong class="font-medium text-ink">Paid</strong> undercounts. Paid is read from
+                the orders table. Real conversion is therefore no worse than shown.
+              </p>
+            </div>
+          </div>
+
+          @if (leakingProducts().length > 0) {
+            <div class="mt-6 border-t border-line pt-5">
+              <h3 class="text-sm font-semibold text-ink">Looked at, not taken</h3>
+              <p class="mt-0.5 text-xs text-ink-muted">
+                Viewed by several shoppers and added by fewer than half of them. Sales figures
+                cannot show this, because they only contain what did sell.
+              </p>
+              <ul class="mt-3 divide-y divide-line">
+                @for (product of leakingProducts(); track product.sku) {
+                  <li class="flex items-center justify-between gap-4 py-2 text-sm">
+                    <span class="min-w-0">
+                      <span class="block truncate text-ink">{{ product.name ?? product.sku }}</span>
+                      <span class="block font-mono text-[0.6875rem] text-ink-subtle">{{
+                        product.sku
+                      }}</span>
+                    </span>
+                    <span class="shrink-0 text-xs text-ink-muted">
+                      {{ product.sessions_viewed }} viewed · {{ product.sessions_added }} added
+                      <ot-badge tone="warn">{{ percent(product.add_to_cart_rate) }}</ot-badge>
+                    </span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (shop.top_paths.length > 0) {
+            <div class="mt-6 border-t border-line pt-5">
+              <h3 class="text-sm font-semibold text-ink">Most visited pages</h3>
+              <ul class="mt-3 divide-y divide-line">
+                @for (row of shop.top_paths; track row.path) {
+                  <li class="flex items-center justify-between gap-4 py-2 text-sm">
+                    <span class="min-w-0 truncate font-mono text-xs text-ink">{{ row.path }}</span>
+                    <span class="shrink-0 text-xs text-ink-muted">
+                      {{ row.views }} view(s) · {{ row.sessions }} session(s)
+                    </span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        }
+      </ot-card>
+    }
+
     <!-- Funnel -->
     @if (funnel(); as data) {
       <ot-card

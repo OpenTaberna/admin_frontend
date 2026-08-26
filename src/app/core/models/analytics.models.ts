@@ -142,3 +142,45 @@ export interface DateRange {
   from: string;
   to: string;
 }
+
+/**
+ * The shopper journey, from arriving at the shop to a paid order.
+ *
+ * **The pre-order steps are a floor, not a count.** Blocked scripts, a tab
+ * closed before the batch flushed and disabled JavaScript all lose events. The
+ * `paid` step is read from the orders table and is exact. Present them
+ * differently — a funnel whose first step undercounts and whose last does not
+ * will overstate conversion, and a reader deserves to know which end is soft.
+ */
+export interface StorefrontStep {
+  step: string;
+  label: string;
+  sessions: number;
+  conversion_from_start: number | null;
+  drop_off_from_previous: number | null;
+}
+
+export interface PathViews {
+  path: string;
+  views: number;
+  sessions: number;
+}
+
+export interface ProductInterest {
+  sku: string;
+  name: string | null;
+  sessions_viewed: number;
+  sessions_added: number;
+  /** Sessions that added divided by sessions that viewed. Null when unviewed. */
+  add_to_cart_rate: number | null;
+}
+
+export interface AnalyticsStorefront {
+  period: PeriodInfo;
+  /** False when the deployment is not collecting. Distinct from "no visitors". */
+  enabled: boolean;
+  page_views: number;
+  steps: StorefrontStep[];
+  top_paths: PathViews[];
+  product_interest: ProductInterest[];
+}

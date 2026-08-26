@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 
 import {
   AnalyticsFunnel,
+  AnalyticsStorefront,
   AnalyticsProducts,
   AnalyticsSummary,
   AnalyticsTimeseries,
@@ -51,5 +52,9 @@ export class AnalyticsService {
 
   funnel(range: DateRange): Observable<AnalyticsFunnel> {
     return this.api.get<AnalyticsFunnel>('/v1/admin/analytics/funnel', { ...range });
+  }
+
+  storefront(range: DateRange): Observable<AnalyticsStorefront> {
+    return this.api.get<AnalyticsStorefront>('/v1/admin/analytics/storefront', { ...range });
   }
 }
