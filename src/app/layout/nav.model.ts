@@ -20,6 +20,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: 'M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z',
   },
   {
+    label: 'Analytics',
+    path: '/analytics',
+    description: 'Revenue, products and funnel',
+    icon: 'M3 3v16a2 2 0 0 0 2 2h16M7 15l3.5-4 3 2.5L20 7',
+  },
+  {
     label: 'Products',
     path: '/products',
     description: 'What customers can see and buy',

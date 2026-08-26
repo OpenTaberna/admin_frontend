@@ -21,6 +21,12 @@ export const routes: Routes = [
           import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
       },
       {
+        path: 'analytics',
+        title: 'Analytics · OpenTaberna Admin',
+        loadComponent: () =>
+          import('./features/analytics/analytics.page').then((m) => m.AnalyticsPage),
+      },
+      {
         path: 'products',
         title: 'Products · OpenTaberna Admin',
         loadComponent: () =>

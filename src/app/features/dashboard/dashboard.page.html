@@ -8,11 +8,16 @@
   <!-- Money -->
   <div class="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
     <div class="card p-5">
-      <p class="text-xs uppercase tracking-wide text-ink-subtle">Revenue</p>
+      <p class="text-xs uppercase tracking-wide text-ink-subtle">Net revenue</p>
       <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">
         {{ revenue() | money: currency() }}
       </p>
-      <p class="mt-1 text-xs text-ink-muted">Paid, packed and shipped</p>
+      <p class="mt-1 text-xs text-ink-muted">
+        Last {{ moneyWindowDays }} days, after refunds
+        @if (multiCurrency()) {
+          <span class="text-ink-subtle">· {{ currency() }} only</span>
+        }
+      </p>
     </div>
 
     <a
@@ -49,7 +54,7 @@
       <p class="mt-1 text-3xl font-semibold tabular-nums text-ink">
         {{ averageOrder() | money: currency() }}
       </p>
-      <p class="mt-1 text-xs text-ink-muted">{{ shipped().length }} shipped to date</p>
+      <p class="mt-1 text-xs text-ink-muted">Across {{ revenueOrders() }} paid order(s)</p>
     </div>
   </div>
 
@@ -137,6 +142,7 @@
     </ot-card>
 
     <ot-card title="Order mix" description="Across the most recent 100 orders.">
+      <!-- Still the recent window: this is a work-queue view, not a total. -->
       @if (statusMix().length === 0) {
         <p class="py-6 text-center text-sm text-ink-muted">No orders yet.</p>
       } @else {
