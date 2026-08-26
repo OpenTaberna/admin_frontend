@@ -7,6 +7,14 @@
 export const environment = {
   production: true,
   apiBaseUrl: '/api',
+  /**
+   * Uncaught error reporting. Off by default; requires FRONTEND_ERRORS_ENABLED
+   * on the API, which otherwise answers the endpoint with a 404.
+   */
+  errorReporting: {
+    enabled: false,
+    endpoint: '/v1/telemetry/errors',
+  },
   keycloak: {
     url: 'https://auth.opentaberna.de',
     realm: 'opentaberna',

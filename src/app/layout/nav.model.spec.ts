@@ -1,7 +1,7 @@
 import { NAV_ITEMS } from './nav.model';
 
 describe('side navigation', () => {
-  it('exposes the seven administration areas, in working order', () => {
+  it('exposes the eight administration areas, in working order', () => {
     expect(NAV_ITEMS.map((i) => i.path)).toEqual([
       '/dashboard',
       '/analytics',
@@ -9,6 +9,7 @@ describe('side navigation', () => {
       '/inventory',
       '/orders',
       '/returns',
+      '/errors',
       '/users',
     ]);
   });
