@@ -10,6 +10,7 @@ import { rangeEndingToday } from '../../core/date-range';
 import {
   AnalyticsFunnel,
   AnalyticsProducts,
+  AnalyticsStorefront,
   AnalyticsSummary,
   AnalyticsTimeseries,
   CurrencyTotals,
@@ -70,6 +71,7 @@ export class AnalyticsPage {
   readonly series = signal<AnalyticsTimeseries | null>(null);
   readonly products = signal<AnalyticsProducts | null>(null);
   readonly funnel = signal<AnalyticsFunnel | null>(null);
+  readonly storefront = signal<AnalyticsStorefront | null>(null);
 
   /** Currency the charts are drawn in — the one with the most revenue. */
   readonly primaryCurrency = computed(() => {
@@ -181,6 +183,59 @@ export class AnalyticsPage {
     };
   });
 
+  /**
+   * The shopper funnel, drawn as a bar chart.
+   *
+   * The last step is tinted differently: it comes from the orders table and is
+   * exact, while every step before it depends on what browsers reported and is
+   * a floor. Drawing them identically would imply one continuous measurement.
+   */
+  readonly storefrontChart = computed<ChartConfiguration<'bar'> | null>(() => {
+    const steps = this.storefront()?.steps;
+    if (!steps?.length) {
+      return null;
+    }
+    return {
+      type: 'bar',
+      data: {
+        labels: steps.map((step) => step.label),
+        datasets: [
+          {
+            label: 'Sessions',
+            data: steps.map((step) => step.sessions),
+            backgroundColor: steps.map((step) => (step.step === 'paid' ? BRAND : MUTED)),
+            borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+      },
+    };
+  });
+
+  /** True when the deployment is collecting nothing at all. */
+  readonly storefrontOff = computed(() => this.storefront()?.enabled === false);
+
+  /**
+   * Products drawing interest without converting it.
+   *
+   * Sorted by the gap between being viewed and being added — a listing that
+   * attracts people and then loses them is invisible in sales figures, which
+   * only ever contain what did sell.
+   */
+  readonly leakingProducts = computed(() => {
+    const rows = this.storefront()?.product_interest ?? [];
+    return [...rows]
+      .filter((row) => row.sessions_viewed >= 2 && (row.add_to_cart_rate ?? 1) < 0.5)
+      .sort((a, b) => (a.add_to_cart_rate ?? 1) - (b.add_to_cart_rate ?? 1))
+      .slice(0, 5);
+  });
+
   readonly worstDropOff = computed(() => {
     const steps = this.funnel()?.steps ?? [];
     const withDrop = steps.filter((step) => (step.drop_off_from_previous ?? 0) > 0);
@@ -219,14 +274,22 @@ export class AnalyticsPage {
       series: this.analytics.timeseries(range, this.interval()).pipe(catchError(() => of(null))),
       products: this.analytics.products(range, this.sort(), 15).pipe(catchError(() => of(null))),
       funnel: this.analytics.funnel(range).pipe(catchError(() => of(null))),
+      storefront: this.analytics.storefront(range).pipe(catchError(() => of(null))),
     }).subscribe((result) => {
-      if (!result.summary || !result.series || !result.products || !result.funnel) {
+      if (
+        !result.summary ||
+        !result.series ||
+        !result.products ||
+        !result.funnel ||
+        !result.storefront
+      ) {
         this.partial.set(true);
       }
       this.summary.set(result.summary);
       this.series.set(result.series);
       this.products.set(result.products);
       this.funnel.set(result.funnel);
+      this.storefront.set(result.storefront);
       this.loading.set(false);
     });
   }
