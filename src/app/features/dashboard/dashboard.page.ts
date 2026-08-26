@@ -4,22 +4,29 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+import { AnalyticsService } from '../../core/api/analytics.service';
 import { CatalogueService } from '../../core/api/catalogue.service';
 import { InventoryService } from '../../core/api/inventory.service';
 import { OrdersService } from '../../core/api/orders.service';
+import { CurrencyTotals } from '../../core/models/analytics.models';
 import { InventoryItem, Item, OrderSummary } from '../../core/models/api.models';
+import { rangeEndingToday } from '../../core/date-range';
 import { BadgeComponent, CardComponent, MoneyPipe, SpinnerComponent } from '../../shared/ui';
 
-/** Order states whose value counts as money actually taken. */
-const EARNED: readonly string[] = ['paid', 'ready_to_ship', 'shipped'];
+/** Window the money tiles report on. Deep analysis lives on /analytics. */
+const MONEY_WINDOW_DAYS = 30;
 
 /**
  * The operational picture: money, payments, shipping and stock.
  *
- * Every figure is derived from the orders list rather than a stats endpoint,
- * because the API has none yet. That is honest but has a limit worth knowing:
- * it reflects the most recent 100 orders, which is stated on the page rather
- * than quietly implied.
+ * Money comes from `/v1/admin/analytics/summary`, computed in SQL over the
+ * whole order history. It used to be summed here from the most recent 100
+ * orders, which meant the headline revenue silently stopped being the shop's
+ * revenue at order 101.
+ *
+ * The work queues below still read the orders list, and that is the right
+ * source for them: they are "what needs doing now", and the newest orders are
+ * exactly the ones that need doing.
  *
  * Each panel degrades on its own — one failing endpoint must not blank the
  * page, so a partial view is shown with a warning instead.
@@ -31,6 +38,7 @@ const EARNED: readonly string[] = ['paid', 'ready_to_ship', 'shipped'];
   templateUrl: './dashboard.page.html',
 })
 export class DashboardPage {
+  private readonly analytics = inject(AnalyticsService);
   private readonly catalogue = inject(CatalogueService);
   private readonly inventory = inject(InventoryService);
   private readonly orders = inject(OrdersService);
@@ -40,15 +48,36 @@ export class DashboardPage {
   readonly items = signal<Item[]>([]);
   readonly stock = signal<InventoryItem[]>([]);
   readonly allOrders = signal<OrderSummary[]>([]);
+  readonly totals = signal<CurrencyTotals[]>([]);
 
-  readonly currency = computed(() => this.allOrders()[0]?.currency ?? 'EUR');
+  readonly moneyWindowDays = MONEY_WINDOW_DAYS;
 
-  /** Money taken: paid, packed or shipped. */
-  readonly revenue = computed(() =>
-    this.allOrders()
-      .filter((o) => EARNED.includes(o.status))
-      .reduce((sum, o) => sum + o.total_amount, 0),
+  /**
+   * The currency the tiles are shown in: whichever earned most.
+   *
+   * Falls back to the newest order's currency when the analytics call failed,
+   * so the page still renders something sensible rather than a bare number.
+   */
+  readonly currency = computed(() => {
+    const ranked = [...this.totals()].sort((a, b) => b.gross_revenue - a.gross_revenue);
+    return ranked[0]?.currency ?? this.allOrders()[0]?.currency ?? 'EUR';
+  });
+
+  /** Headline block for the displayed currency, if analytics answered. */
+  private readonly primaryTotals = computed<CurrencyTotals | undefined>(() =>
+    this.totals().find((entry) => entry.currency === this.currency()),
   );
+
+  /**
+   * True when more than one currency traded, so the tiles can say they show
+   * one of them. Summing across currencies is never correct.
+   */
+  readonly multiCurrency = computed(() => this.totals().length > 1);
+
+  /** Money taken in the window, net of refunds. */
+  readonly revenue = computed(() => this.primaryTotals()?.net_revenue ?? 0);
+
+  readonly revenueOrders = computed(() => this.primaryTotals()?.orders ?? 0);
 
   /** Checkouts started but not paid — revenue at risk, not revenue earned. */
   readonly awaitingPayment = computed(() =>
@@ -79,10 +108,7 @@ export class DashboardPage {
   );
 
   /** Average order value across orders that produced money. */
-  readonly averageOrder = computed(() => {
-    const earned = this.allOrders().filter((o) => EARNED.includes(o.status));
-    return earned.length === 0 ? 0 : Math.round(this.revenue() / earned.length);
-  });
+  readonly averageOrder = computed(() => this.primaryTotals()?.average_order_value ?? 0);
 
   readonly activeCount = computed(() => this.items().filter((i) => i.status === 'active').length);
   readonly hiddenCount = computed(() => this.items().filter((i) => i.status !== 'active').length);
@@ -124,13 +150,17 @@ export class DashboardPage {
       items: this.catalogue.list(0, 100).pipe(catchError(() => of(null))),
       stock: this.inventory.list(0, 200).pipe(catchError(() => of(null))),
       orders: this.orders.list(undefined, 0, 100).pipe(catchError(() => of(null))),
+      summary: this.analytics
+        .summary(rangeEndingToday(MONEY_WINDOW_DAYS))
+        .pipe(catchError(() => of(null))),
     }).subscribe((res) => {
-      if (!res.items || !res.stock || !res.orders) {
+      if (!res.items || !res.stock || !res.orders || !res.summary) {
         this.partial.set(true);
       }
       this.items.set(res.items?.items ?? []);
       this.stock.set(res.stock?.items ?? []);
       this.allOrders.set(res.orders?.orders ?? []);
+      this.totals.set(res.summary?.currencies ?? []);
       this.loading.set(false);
     });
   }
