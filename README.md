@@ -112,6 +112,10 @@ realm/client. The client id must stay `opentaberna-admin-ui`: the API checks the
 token's `azp` against its list of admin clients, and any other client's token is
 refused on `/v1/admin/**`.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Licence
 
 Apache License 2.0 — see [LICENSE](LICENSE).

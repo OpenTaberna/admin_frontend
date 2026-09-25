@@ -31,6 +31,9 @@ jobs:
             if (!/Apache License\s+Version 2\.0/.test(fs.readFileSync("LICENSE", "utf8"))) throw new Error("LICENSE is not Apache-2.0");
           '
 
+      - name: Community files
+        run: test -f CODE_OF_CONDUCT.md && test -f CONTRIBUTING.md && test -f .github/CODEOWNERS
+
       - name: Install dependencies
         run: npm ci
 
